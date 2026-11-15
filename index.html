@@ -371,7 +371,7 @@ html.introbg .hero2 .conf{ margin-top:14px; }
 const CHECKOUT = "https://pay.hotmart.com/M108479410H?off=tz6f0bke";
 /* ===== CONFIGURAÇÕES ===== */
 const PIXEL_ID = "1136892508916159";      /* ID do Pixel da Meta (Gerenciador de Eventos > Fontes de dados). Ex.: "123456789012345" */
-const LEAD_WEBHOOK = "https://script.google.com/macros/s/AKfycbyemGa5uWCJ1zcGr5IQeuWfWnxMWDKXdfsFHwHp6AxAiX6JAgUO3e-AA1okJFIYmCMPIw/exec";  /* Endereço que recebe os contatos (Google Planilhas ou n8n). Veja o arquivo de instruções. */
+const LEAD_WEBHOOK = "https://script.google.com/macros/s/AKfycbz0Gdt3XOWNs-bCcoCTd5k2uIYE1IokVfekaPnnl77rKIoZ2dlSLvnUTNBreP6OzRyj7Q/exec";  /* Endereço que recebe os contatos (Google Planilhas ou n8n). Veja o arquivo de instruções. */
 const VIDEO_URL = "";     /* Link do seu vídeo (YouTube ou arquivo .mp4) para o bloco "Quem sou eu" */
 const FOTO_AUTOR = "";    /* Link de uma foto sua (opcional; aparece se não houver vídeo) */
 /* Urgência VERDADEIRA: só ative se o limite for real e você cumprir (ex.: preço sobe depois das vagas ou da data). Atualize à mão. */
@@ -627,7 +627,7 @@ function render(){
   perfil.faixa = ans.idade != null ? FAIXAS[ans.idade] : null;
   progress();
   const q = Q[i]; let h = "";
-  try { if (!render.vistos) render.vistos = {}; if (!render.vistos[q.id] && window.fbq){ render.vistos[q.id]=1; fbq("trackCustom", "Etapa_" + String(i+1).padStart(2,"0") + "_" + q.id); } } catch(e){}
+  try { if (!render.vistos) render.vistos = {}; if (!render.vistos[q.id]){ render.vistos[q.id]=1; if (window.fbq) fbq("trackCustom", "Etapa_" + String(i+1).padStart(2,"0") + "_" + q.id); enviaProgresso(q); } } catch(e){}
   document.documentElement.classList.toggle("introbg", q.tipo === "intro");
   if (q.tipo === "intro"){
     h = `<div class="hero2"><div class="g" aria-hidden="true">♔${G}</div>
@@ -762,13 +762,21 @@ const px = (ev, data) => { try { if (window.fbq) fbq("track", ev, data || {}); }
   fbq("init", PIXEL_ID); fbq("track", "PageView");
 })();
 let whats = "";
+const SID = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const ROT = { nome0:"Nome", t1:"Pausa 1", f1:"Notícia g1", t2:"Pausa 2", h1:"História", f2:"Notícia OPAS", x1:"Lição de xadrez", lead:"Tela do WhatsApp", load:"Calculando", res:"RESULTADO / OFERTA" };
+const postar = (d) => { if (!LEAD_WEBHOOK) return; try { fetch(LEAD_WEBHOOK, { method:"POST", mode:"no-cors", keepalive:true, headers:{ "Content-Type":"text/plain;charset=utf-8" }, body:JSON.stringify(d) }); } catch(e){} };
+const agora = () => { try { return new Date().toLocaleString("pt-BR", { timeZone:"America/Sao_Paulo" }); } catch(e){ return new Date().toISOString(); } };
+function enviaProgresso(q){
+  const tit = ROT[q.id] || String(q.titulo || q.id).replace(/<[^>]+>/g, "").slice(0, 60);
+  postar({ id:SID, data:agora(), passo:(i + 1) + " de " + Q.length, etapa:tit, nome, sexo:perfil.sexo === "m" ? "Homem" : perfil.sexo === "f" ? "Mulher" : "", idade:perfil.faixa || "", utm:UTM.toString() });
+}
 function enviaLead(extra){
   if (!LEAD_WEBHOOK) return;
   const sc = score(), n = nota();
-  const d = Object.assign({ data:(() => { try { return new Date().toLocaleString("pt-BR", { timeZone:"America/Sao_Paulo" }); } catch(e){ return new Date().toISOString(); } })(), nome, whatsapp:whats, sexo:perfil.sexo === "m" ? "Homem" : perfil.sexo === "f" ? "Mulher" : "", idade:perfil.faixa || "",
+  const d = Object.assign({ id:SID, data:agora(), nome, whatsapp:whats, sexo:perfil.sexo === "m" ? "Homem" : perfil.sexo === "f" ? "Mulher" : "", idade:perfil.faixa || "",
     nota:n, nivel:nivelAgua(n).nome, fuga:FUGAS[sc.top].nome, problema:texto, abre:labels("abre")[0] || "",
     utm:UTM.toString() }, extra || {});
-  try { fetch(LEAD_WEBHOOK, { method:"POST", mode:"no-cors", keepalive:true, headers:{ "Content-Type":"text/plain;charset=utf-8" }, body:JSON.stringify(d) }); } catch(e){}
+  postar(d);
 }
 const prova = () => `<div class="prova"><img src="${img("prova")}" alt="Famílias que autorizaram o uso das fotos">${PROVA.nota ? `<span class="stars" aria-label="Nota ${esc(PROVA.nota)}">★★★★★ <b>${esc(PROVA.nota)}</b></span>` : ""}${PROVA.texto ? `<p>${esc(PROVA.texto)}</p>` : ""}</div>`;
 function resultado(){
