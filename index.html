@@ -230,6 +230,16 @@ h2{ font-size:clamp(21px, 5.9vw, 26px); margin-bottom:8px; }
 .sub{ font-size:15px; line-height:1.45; margin:0 0 12px; }
 .hint{ font-size:13.5px; margin:-4px 0 10px; }
 .sub + .hint{ margin-top:-6px; }
+.sub{ font-size:13.5px; line-height:1.4; color:var(--soft); margin:0 0 10px; }
+.multi{ display:inline-flex; align-items:center; gap:6px; background:var(--mark); color:var(--ink); font-size:14.5px; font-weight:800; border:1.5px solid #E2C55A; border-radius:999px; padding:6px 14px; margin:0 0 12px; }
+.multi b{ text-decoration:underline; text-underline-offset:3px; }
+.tag0{ display:inline-block; background:var(--card); border:1px solid var(--card-line); border-radius:999px; padding:6px 12px; font-size:12.5px; font-weight:700; color:var(--text); margin:0 0 14px; }
+.gar{ display:flex; align-items:center; gap:14px; background:#E7F4EC; border:2.5px solid var(--green); border-radius:16px; padding:14px; margin:4px 0 14px; text-align:left; }
+.gar .selo{ flex:0 0 84px; height:84px; border-radius:50%; background:var(--green); color:#fff; display:grid; place-content:center; text-align:center; line-height:1; box-shadow:0 0 0 4px #E7F4EC, 0 0 0 6px var(--green); }
+.gar .selo b{ font-size:34px; font-weight:900; display:block; }
+.gar .selo small{ font-size:11px; font-weight:800; letter-spacing:.08em; }
+.gar h4{ margin:0 0 4px; font-size:19px; font-weight:900; color:var(--green-d); line-height:1.15; }
+.gar p{ margin:0; font-size:14px; line-height:1.4; color:var(--text); }
 .opts{ gap:8px; }
 .opt{ gap:10px; padding:9px 12px 9px 9px; font-size:15px; border-radius:14px; }
 .opt .ic{ flex-basis:36px; height:36px; border-radius:9px; }
@@ -371,7 +381,7 @@ const VALORES = [7, 5, 4, 6, 6];/*/CFG*/
 const PRECO = String(PRECO_NUM);
 const din = (n) => MOEDA + " " + (Number.isInteger(n) ? String(n) : n.toFixed(2).replace(".", ","));
 const dinC = (n) => MOEDA + " " + n.toFixed(2).replace(".", ",");
-const QUIZ_URL = "";
+const QUIZ_URL = "https://teste-da-decisao-internacional.vercel.app/";
 /* Prova social: escreva quem são essas famílias e, se tiver, a nota média real e de onde ela vem */
 const PROVA = { texto:"", nota:"" };
 /*CFG2*/const PARCELAS = "", PARCELA = "";/*/CFG2*/ /* confira o valor exato da parcela no seu checkout */
@@ -417,7 +427,6 @@ const FUGAS = {
 };
 
 const Q = [
-  { id:"intro", tipo:"intro" },
   { id:"nome0", tipo:"nome0" },
   { id:"sexo", tipo:"opts", grid:true, titulo:"Você é…", sub:"Assim as histórias ficam mais parecidas com a sua vida.",
     o:[ ["🧍","Mulher",{}], ["🪞","Homem",{}] ] },
@@ -601,10 +610,11 @@ function score(){
 }
 
 function progress(){
-  const total = Q.length - 3; /* sem intro, carregamento e resultado */
-  const pos = Math.max(0, Math.min(i - 1, total));
-  $("progress").style.width = (pos / total * 100) + "%";
-  $("barWrap").classList.toggle("hide", i === 0 || i >= Q.length - 1);
+  const total = Q.length - 2; /* sem carregamento e resultado */
+  /* primeira tela 8%; depois do nome já passa de 55% e segue até 100% */
+  const pct = i === 0 ? 8 : Math.min(100, 55 + 45 * i / total);
+  $("progress").style.width = pct + "%";
+  $("barWrap").classList.toggle("hide", i >= Q.length - 1);
   $("backTop").hidden = (i === 0 || i >= Q.length - 2);
 }
 const optBtn = (o, k, on, multi, grid, num) => grid ? `<button class="opt g${on ? " sel" : ""}" data-k="${k}" type="button" aria-pressed="${on}"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICON[o[0]] || ""}</svg></span><span class="ck${multi ? " sq" : ""}" aria-hidden="true">${CHECK}</span><span class="t"><b>${esc(o[1])}</b>${o[2].sub ? `<small>${esc(o[2].sub)}</small>` : ""}</span></button>` : `<button class="opt${on ? " sel" : ""}" data-k="${k}" type="button" aria-pressed="${on}">${num ? `<span class="nb" aria-hidden="true">${k + 1}</span>` : `<span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICON[o[0]] || ""}</svg></span>`}<span class="t">${esc(o[1])}</span><span class="ck${multi ? " sq" : ""}" aria-hidden="true">${CHECK}</span></button>`;
@@ -617,6 +627,7 @@ function render(){
   perfil.faixa = ans.idade != null ? FAIXAS[ans.idade] : null;
   progress();
   const q = Q[i]; let h = "";
+  try { if (!render.vistos) render.vistos = {}; if (!render.vistos[q.id] && window.fbq){ render.vistos[q.id]=1; fbq("trackCustom", "Etapa_" + String(i+1).padStart(2,"0") + "_" + q.id); } } catch(e){}
   document.documentElement.classList.toggle("introbg", q.tipo === "intro");
   if (q.tipo === "intro"){
     h = `<div class="hero2"><div class="g" aria-hidden="true">♔${G}</div>
@@ -631,10 +642,10 @@ function render(){
     h = `${kick(q.id)}<h2>${q.titulo}</h2>${q.sub ? `<p class="sub">${esc(q.sub)}</p>` : ""}<div class="opts${q.grid ? " grid" : ""}">${q.o.map((o, k) => optBtn(o, k, ans[q.id] === k, false, q.grid)).join("")}</div>`;
   } else if (q.tipo === "multi"){
     const sel = ans[q.id] || [];
-    h = `${kick(q.id)}<h2>${q.titulo}</h2>${q.sub ? `<p class="sub">${esc(q.sub)}</p>` : ""}<p class="hint">Pode marcar mais de uma.</p><div class="opts${q.grid ? " grid" : ""}">${q.o.map((o, k) => optBtn(o, k, sel.includes(k), true, q.grid, q.num)).join("")}</div>
+    h = `${kick(q.id)}<h2>${q.titulo}</h2>${q.sub ? `<p class="sub">${esc(q.sub)}</p>` : ""}<p class="multi">✓✓ Pode marcar <b>mais de uma</b></p><div class="opts${q.grid ? " grid" : ""}">${q.o.map((o, k) => optBtn(o, k, sel.includes(k), true, q.grid, q.num)).join("")}</div>
       <div class="row stick"><button class="btn" id="next" type="button"${sel.length ? "" : " disabled"}>Continuar${ARROW}</button></div>`;
   } else if (q.tipo === "nome0"){
-    h = `<p class="kicker">Antes de começar.</p><h2>Como posso <mark>te chamar</mark>?</h2><p class="sub">Seu primeiro nome é suficiente.</p>
+    h = `<p class="tag0">✓ Teste gratuito · ⏱ 3 min · 🔒 100% confidencial</p><h2>Como posso <mark>te chamar</mark>?</h2><p class="sub">Seu primeiro nome é suficiente.</p>
       <input id="nomeInput" type="text" autocomplete="given-name" maxlength="40" placeholder="Seu primeiro nome" value="${esc(nome)}">
       <div class="row stick"><button class="btn" id="next" type="button">Continuar${ARROW}</button></div>`;
   } else if (q.tipo === "noticia"){
@@ -711,10 +722,9 @@ function bind(q){
     next.addEventListener("click", () => { texto = $("frase").value.trim(); go(); });
     $("skip").addEventListener("click", () => { texto = ""; go(); });
   } else if (q.tipo === "nome0"){
-    if (!window.__iniciou){ window.__iniciou = 1; px("ViewContent", { content_name:"Quiz iniciado" }); }
     const inp = $("nomeInput");
     inp.addEventListener("keydown", e => { if (e.key === "Enter") next.click(); });
-    next.addEventListener("click", () => { nome = inp.value.trim().split(/\s+/)[0] || ""; go(); });
+    next.addEventListener("click", () => { if (!window.__iniciou){ window.__iniciou = 1; px("ViewContent", { content_name:"Quiz iniciado" }); } nome = inp.value.trim().split(/\s+/)[0] || ""; go(); });
   } else if (q.tipo === "lead"){
     const inp = $("wpp"), err = $("wppErr");
     const fmt = (v) => { const d = v.replace(/\D/g, "").replace(/^55(?=\d{10,11}$)/, "").slice(0, 11); if (d.length <= 2) return d; if (d.length <= 6) return `(${d.slice(0,2)}) ${d.slice(2)}`; if (d.length <= 10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`; return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`; };
@@ -865,10 +875,9 @@ function resultado(){
     ${PARCELAS ? `<div class="pv"><span class="px">${PARCELAS}x<br>de</span><span class="cur">${MOEDA}</span><span class="big">${PARCELA}</span></div>
     <p class="av">ou <b>${dinC(PRECO_NUM)}</b> à vista · acesso imediato</p>` : `<div class="pv"><span class="cur">${MOEDA}</span><span class="big">${dinC(PRECO_NUM).replace(MOEDA + " ", "")}</span></div>
     <p class="av">pagamento único · acesso imediato</p>`}
-    <div class="risk"><span>Seu risco com a garantia de 7 dias:</span><b>${dinC(0)}</b></div>
+    <div class="gar"><div class="selo"><b>7</b><small>DIAS</small></div><div><h4>Garantia total de 7 dias</h4><p>Leia, faça os exercícios. Se não valer, você pede e recebe <b>100% do seu dinheiro de volta</b>. Seu risco: <b>${dinC(0)}</b>.</p></div></div>
     <a ${buyAttrs}>Quero o e-book + ${BONUS.length} bônus${ARROW}</a>
     ${prova()}
-    <p class="gnote">Leia, faça os exercícios. Se em até 7 dias sentir que não valeu, é só pedir e você recebe 100% do valor de volta.</p>
   </div>
   ${!alto && !naoQuer ? `<div class="sec"><h3>Quer ir além?</h3><p>Pela sua nota, talvez você queira fazer isso com alguém do lado. Quem compra o e-book pode entrar na lista de espera para uma <b>sessão de diagnóstico</b> comigo. As vagas por semana são limitadas.</p></div>` : ""}
   <a ${buyAttrs}>Quero começar minha nova partida</a>
