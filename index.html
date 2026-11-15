@@ -731,7 +731,7 @@ function bind(q){
     inp.addEventListener("input", () => { inp.value = fmt(inp.value); err.hidden = true; });
     inp.addEventListener("keydown", e => { if (e.key === "Enter") next.click(); });
     next.addEventListener("click", () => { const d = inp.value.replace(/\D/g, ""); if (d.length < 10){ err.hidden = false; inp.focus(); return; } whats = inp.value; enviaLead(); px("Lead"); go(); });
-    $("skip").addEventListener("click", () => { whats = ""; go(); });
+    $("skip").addEventListener("click", () => { whats = "(não deixou)"; enviaLead(); whats = ""; go(); });
   } else if (q.tipo === "load"){
     const ids = ["l1","l2","l3"]; let k = 0;
     const tick = () => { if (k < 3){ $(ids[k]).classList.add("on"); k++; setTimeout(tick, 700); } else go(); };
@@ -765,10 +765,10 @@ let whats = "";
 function enviaLead(extra){
   if (!LEAD_WEBHOOK) return;
   const sc = score(), n = nota();
-  const d = Object.assign({ data:new Date().toISOString(), nome, whatsapp:whats, sexo:perfil.sexo === "m" ? "Homem" : perfil.sexo === "f" ? "Mulher" : "", idade:perfil.faixa || "",
+  const d = Object.assign({ data:(() => { try { return new Date().toLocaleString("pt-BR", { timeZone:"America/Sao_Paulo" }); } catch(e){ return new Date().toISOString(); } })(), nome, whatsapp:whats, sexo:perfil.sexo === "m" ? "Homem" : perfil.sexo === "f" ? "Mulher" : "", idade:perfil.faixa || "",
     nota:n, nivel:nivelAgua(n).nome, fuga:FUGAS[sc.top].nome, problema:texto, abre:labels("abre")[0] || "",
     utm:UTM.toString() }, extra || {});
-  try { fetch(LEAD_WEBHOOK, { method:"POST", mode:"no-cors", headers:{ "Content-Type":"text/plain;charset=utf-8" }, body:JSON.stringify(d) }); } catch(e){}
+  try { fetch(LEAD_WEBHOOK, { method:"POST", mode:"no-cors", keepalive:true, headers:{ "Content-Type":"text/plain;charset=utf-8" }, body:JSON.stringify(d) }); } catch(e){}
 }
 const prova = () => `<div class="prova"><img src="${img("prova")}" alt="Famílias que autorizaram o uso das fotos">${PROVA.nota ? `<span class="stars" aria-label="Nota ${esc(PROVA.nota)}">★★★★★ <b>${esc(PROVA.nota)}</b></span>` : ""}${PROVA.texto ? `<p>${esc(PROVA.texto)}</p>` : ""}</div>`;
 function resultado(){
