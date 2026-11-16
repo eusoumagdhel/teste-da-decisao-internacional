@@ -385,7 +385,7 @@ html.introbg .hero2 .conf{ margin-top:14px; }
 const CHECKOUT = "https://pay.hotmart.com/M108479410H?off=tz6f0bke";
 /* ===== CONFIGURAÇÕES ===== */
 const PIXEL_ID = "1136892508916159";      /* ID do Pixel da Meta (Gerenciador de Eventos > Fontes de dados). Ex.: "123456789012345" */
-const LEAD_WEBHOOK = "https://script.google.com/macros/s/AKfycbyJ7GUSoVAMayedrx97GZpsyfCtYCd2EbiBRh64EkT8OpH-vD9A0DhbFc_QQmOgZdG_Ew/exec";  /* Endereço que recebe os contatos (Google Planilhas ou n8n). Veja o arquivo de instruções. */
+const LEAD_WEBHOOK = "https://script.google.com/macros/s/AKfycbxQPEa5rjRQT9-x--m6uBau2gcuUPiLC9lRixQuoJM1WdYtg0iOnrQgbk8ehwWgpPBghg/exec";  /* Endereço que recebe os contatos (Google Planilhas ou n8n). Veja o arquivo de instruções. */
 const VIDEO_URL = "";     /* Link do seu vídeo (YouTube ou arquivo .mp4) para o bloco "Quem sou eu" */
 const FOTO_AUTOR = "";    /* Link de uma foto sua (opcional; aparece se não houver vídeo) */
 /* Urgência VERDADEIRA: só ative se o limite for real e você cumprir (ex.: preço sobe depois das vagas ou da data). Atualize à mão. */
@@ -830,7 +830,14 @@ const SID = (() => { const novo = Date.now().toString(36) + Math.random().toStri
   try { let v = localStorage.getItem("quiz_sid"); if (!v){ v = novo; localStorage.setItem("quiz_sid", v); } return v; } catch(e){ return novo; } })();
 let MAXP = (() => { try { return +localStorage.getItem("quiz_max") || 0; } catch(e){ return 0; } })();
 const ROT = { nome0:"Nome", t1:"Pausa 1", f1:"Notícia g1", t2:"Pausa 2", h1:"História", f2:"Notícia OPAS", x1:"Lição de xadrez", lead:"Tela do WhatsApp", load:"Calculando", res:"RESULTADO / OFERTA" };
-const postar = (d) => { if (!LEAD_WEBHOOK) return; try { fetch(LEAD_WEBHOOK, { method:"POST", mode:"no-cors", keepalive:true, headers:{ "Content-Type":"text/plain;charset=utf-8" }, body:JSON.stringify(d) }); } catch(e){} };
+const envia = (d) => { if (!LEAD_WEBHOOK) return; try { fetch(LEAD_WEBHOOK, { method:"POST", mode:"no-cors", keepalive:true, headers:{ "Content-Type":"text/plain;charset=utf-8" }, body:JSON.stringify(d) }); } catch(e){} };
+/* o app do Facebook/Instagram pode pré-carregar a página escondida, antes da pessoa tocar no anúncio: só conta quando a página está visível de verdade */
+const visivel = () => document.visibilityState === "visible" && !document.prerendering;
+let filaVis = [];
+const postar = (d) => { if (visivel()) envia(d); else filaVis.push(d); };
+const soltaFila = () => { if (visivel() && filaVis.length){ const f = filaVis; filaVis = []; f.forEach(envia); } };
+document.addEventListener("visibilitychange", soltaFila);
+document.addEventListener("prerenderingchange", soltaFila);
 const agora = () => { try { return new Date().toLocaleString("pt-BR", { timeZone:"America/Sao_Paulo" }); } catch(e){ return new Date().toISOString(); } };
 const CURTO = { area:"Área do problema", q2:"Domingo à noite", q3:"Quando tocam no assunto", q1:"Como lida no dia a dia", sexo:"Sexo", idade:"Idade", tempo:"Tempo por dia na fuga", desde:"Há quanto tempo", perde:"O que está custando", medo:"Medo de perder", voz:"Voz de dentro", estopim:"Estopim", desejo:"O que deseja", quem:"Por quem mudaria", feito:"O que já tentou", falta:"O que falta", prio:"Prioridade", frase:"Problema (frase)", abre:"Aberto a mudar" };
 function respostas(){
